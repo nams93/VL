@@ -456,4 +456,3 @@ function StatusBadge({ status, issues }: { status: VehicleStatus; issues: number
       )
   }
 }
-

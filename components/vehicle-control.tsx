@@ -487,4 +487,3 @@ export function VehicleControl({ selectedVehicleId }: VehicleControlProps) {
     </div>
   )
 }
-

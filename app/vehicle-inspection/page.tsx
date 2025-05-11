@@ -1,24 +1,29 @@
-import { VehicleInspectionForm } from "@/components/vehicle-inspection-form"
-import { VehicleInspectionVisual } from "@/components/vehicle-inspection-visual"
+"use client"
 
-export const metadata = {
-  title: "Inspection de Véhicule",
-  description: "Formulaire d'inspection technique des véhicules",
-}
+import { VehicleInspectionForm } from "@/components/vehicle-inspection-form"
+import { VehiclePhotoCapture } from "@/components/vehicle-photo-capture"
+import { SyncStatus } from "@/components/sync-status"
+import { OfflineMode } from "@/components/offline-mode"
+import { useState } from "react"
+import { v4 as uuidv4 } from "uuid"
 
 export default function VehicleInspectionPage() {
-  return (
-    <div className="container mx-auto py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Formulaire d'Inspection de Véhicule</h1>
-        <p className="text-muted-foreground">Complétez ce formulaire pour enregistrer l'état technique d'un véhicule</p>
-      </div>
+  const [inspectionId] = useState(`inspection-${uuidv4()}`)
+  const [vehicleId, setVehicleId] = useState("")
 
-      <div className="space-y-8">
-        <VehicleInspectionVisual />
-        <VehicleInspectionForm />
-      </div>
+  return (
+    <div className="container mx-auto py-6 space-y-6">
+      <h1 className="text-2xl font-bold">Inspection de Véhicule</h1>
+
+      {/* Afficher le mode hors ligne si nécessaire */}
+      <OfflineMode />
+
+      {/* Afficher l'état de synchronisation */}
+      <SyncStatus />
+
+      <VehicleInspectionForm onVehicleIdChange={(id) => setVehicleId(id)} />
+
+      {vehicleId && <VehiclePhotoCapture inspectionId={inspectionId} vehicleId={vehicleId} />}
     </div>
   )
 }
-

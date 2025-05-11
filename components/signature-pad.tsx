@@ -4,68 +4,129 @@ import type React from "react"
 
 import { useRef, useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Eraser } from "lucide-react"
+import { Trash2 } from "lucide-react"
 
 interface SignaturePadProps {
   onSignatureChange: (signature: string | null) => void
   label?: string
-  className?: string
+  initialSignature?: string | null
 }
 
-export function SignaturePad({ onSignatureChange, label, className }: SignaturePadProps) {
+export function SignaturePad({ onSignatureChange, label = "Signature", initialSignature = null }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
-  const [hasSigned, setHasSigned] = useState(false)
+  const [hasSignature, setHasSignature] = useState(false)
 
   // Initialiser le canvas
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
+    const context = canvas.getContext("2d")
+    if (!context) return
 
-    // Définir la taille du canvas pour qu'elle corresponde à sa taille d'affichage
-    const rect = canvas.getBoundingClientRect()
-    canvas.width = rect.width
-    canvas.height = rect.height
-
-    // Configurer le style du trait
-    ctx.lineWidth = 2
-    ctx.lineCap = "round"
-    ctx.strokeStyle = "#000"
+    // Définir la taille du canvas
+    canvas.width = canvas.offsetWidth
+    canvas.height = canvas.offsetHeight
 
     // Effacer le canvas
-    ctx.fillStyle = "#f9fafb" // Couleur de fond gris clair
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-  }, [])
+    context.fillStyle = "#f9fafb"
+    context.fillRect(0, 0, canvas.width, canvas.height)
 
-  // Gérer le début du dessin
+    // Dessiner la ligne de signature
+    context.beginPath()
+    context.moveTo(10, canvas.height - 10)
+    context.lineTo(canvas.width - 10, canvas.height - 10)
+    context.strokeStyle = "#d1d5db"
+    context.lineWidth = 1
+    context.stroke()
+
+    // Si une signature initiale est fournie, l'afficher
+    if (initialSignature) {
+      const img = new Image()
+      img.onload = () => {
+        context.drawImage(img, 0, 0)
+        setHasSignature(true)
+      }
+      img.src = initialSignature
+    }
+  }, [initialSignature])
+
+  // Gérer le redimensionnement de la fenêtre
+  useEffect(() => {
+    const handleResize = () => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+
+      // Sauvegarder la signature actuelle
+      const currentSignature = canvas.toDataURL()
+
+      // Redimensionner le canvas
+      canvas.width = canvas.offsetWidth
+      canvas.height = canvas.offsetHeight
+
+      // Restaurer la signature
+      if (hasSignature) {
+        const img = new Image()
+        img.onload = () => {
+          const context = canvas.getContext("2d")
+          if (!context) return
+
+          context.drawImage(img, 0, 0, canvas.width, canvas.height)
+        }
+        img.src = currentSignature
+      } else {
+        // Redessiner le canvas vide
+        const context = canvas.getContext("2d")
+        if (!context) return
+
+        context.fillStyle = "#f9fafb"
+        context.fillRect(0, 0, canvas.width, canvas.height)
+
+        context.beginPath()
+        context.moveTo(10, canvas.height - 10)
+        context.lineTo(canvas.width - 10, canvas.height - 10)
+        context.strokeStyle = "#d1d5db"
+        context.lineWidth = 1
+        context.stroke()
+      }
+    }
+
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [hasSignature])
+
+  // Commencer à dessiner
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
+    const context = canvas.getContext("2d")
+    if (!context) return
 
     setIsDrawing(true)
-    setHasSigned(true)
 
     // Obtenir les coordonnées
-    let x, y
+    let clientX, clientY
     if ("touches" in e) {
       // Événement tactile
-      const rect = canvas.getBoundingClientRect()
-      x = e.touches[0].clientX - rect.left
-      y = e.touches[0].clientY - rect.top
+      clientX = e.touches[0].clientX
+      clientY = e.touches[0].clientY
     } else {
       // Événement souris
-      x = e.nativeEvent.offsetX
-      y = e.nativeEvent.offsetY
+      clientX = e.clientX
+      clientY = e.clientY
     }
 
-    ctx.beginPath()
-    ctx.moveTo(x, y)
+    const rect = canvas.getBoundingClientRect()
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+
+    context.beginPath()
+    context.moveTo(x, y)
+    context.strokeStyle = "#000"
+    context.lineWidth = 2
+    context.lineCap = "round"
   }
 
   // Dessiner
@@ -75,42 +136,44 @@ export function SignaturePad({ onSignatureChange, label, className }: SignatureP
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
+    const context = canvas.getContext("2d")
+    if (!context) return
 
     // Obtenir les coordonnées
-    let x, y
+    let clientX, clientY
     if ("touches" in e) {
       // Événement tactile
-      const rect = canvas.getBoundingClientRect()
-      x = e.touches[0].clientX - rect.left
-      y = e.touches[0].clientY - rect.top
+      clientX = e.touches[0].clientX
+      clientY = e.touches[0].clientY
+      e.preventDefault() // Empêcher le défilement sur les appareils tactiles
     } else {
       // Événement souris
-      x = e.nativeEvent.offsetX
-      y = e.nativeEvent.offsetY
+      clientX = e.clientX
+      clientY = e.clientY
     }
 
-    ctx.lineTo(x, y)
-    ctx.stroke()
+    const rect = canvas.getBoundingClientRect()
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+
+    context.lineTo(x, y)
+    context.stroke()
+
+    setHasSignature(true)
   }
 
-  // Arrêter le dessin
+  // Arrêter de dessiner
   const stopDrawing = () => {
     if (!isDrawing) return
+
+    setIsDrawing(false)
 
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    ctx.closePath()
-    setIsDrawing(false)
-
-    // Envoyer la signature
-    const signatureData = canvas.toDataURL("image/png")
-    onSignatureChange(signatureData)
+    // Envoyer la signature au parent
+    const signature = canvas.toDataURL()
+    onSignatureChange(signature)
   }
 
   // Effacer la signature
@@ -118,37 +181,45 @@ export function SignaturePad({ onSignatureChange, label, className }: SignatureP
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
+    const context = canvas.getContext("2d")
+    if (!context) return
 
-    ctx.fillStyle = "#f9fafb" // Couleur de fond gris clair
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // Effacer le canvas
+    context.fillStyle = "#f9fafb"
+    context.fillRect(0, 0, canvas.width, canvas.height)
 
-    setHasSigned(false)
+    // Redessiner la ligne de signature
+    context.beginPath()
+    context.moveTo(10, canvas.height - 10)
+    context.lineTo(canvas.width - 10, canvas.height - 10)
+    context.strokeStyle = "#d1d5db"
+    context.lineWidth = 1
+    context.stroke()
+
+    setHasSignature(false)
     onSignatureChange(null)
   }
 
-  // Empêcher le défilement sur mobile lors de la signature
-  useEffect(() => {
-    const preventScroll = (e: TouchEvent) => {
-      if (isDrawing) {
-        e.preventDefault()
-      }
-    }
-
-    document.addEventListener("touchmove", preventScroll, { passive: false })
-    return () => {
-      document.removeEventListener("touchmove", preventScroll)
-    }
-  }, [isDrawing])
-
   return (
-    <div className={`space-y-2 ${className}`}>
-      {label && <p className="text-xs text-gray-600 mb-1">{label}</p>}
-      <div className="relative border border-gray-300 rounded-md bg-gray-50">
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <label className="block text-xs text-gray-600">{label}</label>
+        {hasSignature && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={clearSignature}
+            className="h-6 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="h-3 w-3 mr-1" /> Effacer
+          </Button>
+        )}
+      </div>
+      <div className="border rounded-md overflow-hidden">
         <canvas
           ref={canvasRef}
-          className="w-full h-24 touch-none cursor-crosshair"
+          className="w-full h-24 bg-gray-50 touch-none"
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
@@ -157,21 +228,7 @@ export function SignaturePad({ onSignatureChange, label, className }: SignatureP
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
         />
-        {hasSigned && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute top-1 right-1 h-6 w-6 bg-white/80 hover:bg-white"
-            onClick={clearSignature}
-          >
-            <Eraser className="h-3 w-3" />
-            <span className="sr-only">Effacer la signature</span>
-          </Button>
-        )}
       </div>
-      {!hasSigned && <p className="text-xs text-center text-gray-500">Signez dans l'espace ci-dessus</p>}
     </div>
   )
 }
-

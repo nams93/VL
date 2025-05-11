@@ -2,13 +2,17 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { Download, Save, RotateCcw } from "lucide-react"
+import { Download, Save, RotateCcw, AlertTriangle } from "lucide-react"
 import { SignaturePad } from "@/components/signature-pad"
 import { InspectionConfirmation } from "@/components/inspection-confirmation"
+
+// Importer le service d'authentification
+import { authService } from "@/lib/auth-service"
 
 type CheckItem = {
   label: string
@@ -16,6 +20,11 @@ type CheckItem = {
 }
 
 export function VehicleInspectionForm() {
+  const router = useRouter()
+  const [formId, setFormId] = useState<string>("")
+  const [isAuthorized, setIsAuthorized] = useState(true)
+  const [currentAgent, setCurrentAgent] = useState<any>(null)
+
   // État pour les sections de vérification
   const [lightsFront, setLightsFront] = useState<CheckItem[]>([
     { label: "Feu de position", value: null },
@@ -71,6 +80,24 @@ export function VehicleInspectionForm() {
     agentName: string
   } | null>(null)
 
+  // Vérifier l'authentification au chargement du composant
+  useEffect(() => {
+    const agent = authService.getCurrentAgent()
+
+    // Si aucun agent n'est connecté, rediriger vers la page d'accueil
+    if (!agent) {
+      router.push("/")
+      return
+    }
+
+    setCurrentAgent(agent)
+    setAgentName(agent.name)
+
+    // Générer un ID d'inspection
+    const newFormId = `INS-${new Date().getTime().toString().slice(-6)}`
+    setFormId(newFormId)
+  }, [router])
+
   // Fonction pour mettre à jour les valeurs des éléments à vérifier
   const updateCheckItem = (
     section: CheckItem[],
@@ -90,7 +117,6 @@ export function VehicleInspectionForm() {
     setEquipmentFront(equipmentFront.map((item) => ({ ...item, value: null })))
     setEquipmentRear(equipmentRear.map((item) => ({ ...item, value: null })))
     setObservations("")
-    setAgentName("")
     setCdeName("")
     setAgentSignature(null)
     setCdeSignature(null)
@@ -110,12 +136,18 @@ export function VehicleInspectionForm() {
       return
     }
 
-    // Générer un ID d'inspection
-    const inspectionId = `INS-${new Date().getTime().toString().slice(-6)}`
+    // Vérifier si la plaque d'immatriculation est renseignée
+    if (!vehicleInfo.immatriculation) {
+      alert("Veuillez saisir la plaque d'immatriculation du véhicule.")
+      return
+    }
+
+    // Enregistrer le formulaire avec la plaque d'immatriculation
+    authService.registerForm(formId, "inspection", vehicleInfo.immatriculation)
 
     // Créer l'objet d'inspection à envoyer
     const inspectionData = {
-      id: inspectionId,
+      id: formId,
       vehicleInfo,
       lightsFront,
       lightsRear,
@@ -123,6 +155,7 @@ export function VehicleInspectionForm() {
       equipmentRear,
       observations,
       agentName,
+      agentId: currentAgent?.id || "",
       cdeName,
       agentSignature,
       cdeSignature,
@@ -130,22 +163,25 @@ export function VehicleInspectionForm() {
       status: "en-attente", // Statut initial: en attente de validation
     }
 
-    // Dans un environnement réel, nous enverions ces données à une API
-    // Pour cette démo, nous allons simuler l'envoi et afficher une confirmation
-    console.log("Données d'inspection envoyées:", inspectionData)
-
-    // Stocker temporairement dans localStorage pour la démo
+    // Stocker dans localStorage pour la persistance des données
     const pendingInspections = JSON.parse(localStorage.getItem("pendingInspections") || "[]")
     pendingInspections.push(inspectionData)
     localStorage.setItem("pendingInspections", JSON.stringify(pendingInspections))
 
+    console.log("Inspection enregistrée:", inspectionData)
+
     // Afficher la confirmation
     setSubmittedInspection({
-      id: inspectionId,
+      id: formId,
       vehicleInfo,
       agentName,
     })
     setShowConfirmation(true)
+  }
+
+  // Si aucun agent n'est connecté, ne rien afficher (la redirection se fera via useEffect)
+  if (!currentAgent) {
+    return null
   }
 
   return (
@@ -190,6 +226,16 @@ export function VehicleInspectionForm() {
         </div>
       </div>
 
+      {/* Bandeau d'information sur l'agent */}
+      <div className="bg-blue-50 p-3 rounded-md mb-4 flex items-center">
+        <div className="mr-2 bg-blue-100 rounded-full p-1">
+          <AlertTriangle className="h-5 w-5 text-blue-600" />
+        </div>
+        <div className="text-sm text-blue-700">
+          <span className="font-medium">Agent connecté:</span> {currentAgent.name} (ID: {currentAgent.id})
+        </div>
+      </div>
+
       {/* Section FONCTIONNEMENT FEU */}
       <div className="bg-white border rounded-md mb-4 shadow-sm">
         <div className="bg-blue-50 p-2 text-center font-medium border-b rounded-t-md">FONCTIONNEMENT FEU</div>
@@ -210,24 +256,24 @@ export function VehicleInspectionForm() {
                   <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <td className="p-1">{item.label}</td>
                     <td className="text-center p-1">
-                      <input
-                        type="radio"
-                        name={`light-front-${index}`}
-                        checked={item.value === "oui"}
-                        onChange={() => updateCheckItem(lightsFront, setLightsFront, index, "oui")}
-                        className="h-4 w-4 accent-blue-600"
-                        required={item.value === null}
-                      />
+                      <div
+                        onClick={() => updateCheckItem(lightsFront, setLightsFront, index, "oui")}
+                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center cursor-pointer ${
+                          item.value === "oui" ? "border-blue-600 bg-blue-50" : "border-gray-300"
+                        }`}
+                      >
+                        {item.value === "oui" && <div className="h-3 w-3 rounded-full bg-blue-600"></div>}
+                      </div>
                     </td>
                     <td className="text-center p-1">
-                      <input
-                        type="radio"
-                        name={`light-front-${index}`}
-                        checked={item.value === "non"}
-                        onChange={() => updateCheckItem(lightsFront, setLightsFront, index, "non")}
-                        className="h-4 w-4 accent-blue-600"
-                        required={item.value === null}
-                      />
+                      <div
+                        onClick={() => updateCheckItem(lightsFront, setLightsFront, index, "non")}
+                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center cursor-pointer ${
+                          item.value === "non" ? "border-blue-600 bg-blue-50" : "border-gray-300"
+                        }`}
+                      >
+                        {item.value === "non" && <div className="h-3 w-3 rounded-full bg-blue-600"></div>}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -251,24 +297,24 @@ export function VehicleInspectionForm() {
                   <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <td className="p-1">{item.label}</td>
                     <td className="text-center p-1">
-                      <input
-                        type="radio"
-                        name={`light-rear-${index}`}
-                        checked={item.value === "oui"}
-                        onChange={() => updateCheckItem(lightsRear, setLightsRear, index, "oui")}
-                        className="h-4 w-4 accent-blue-600"
-                        required={item.value === null}
-                      />
+                      <div
+                        onClick={() => updateCheckItem(lightsRear, setLightsRear, index, "oui")}
+                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center cursor-pointer ${
+                          item.value === "oui" ? "border-blue-600 bg-blue-50" : "border-gray-300"
+                        }`}
+                      >
+                        {item.value === "oui" && <div className="h-3 w-3 rounded-full bg-blue-600"></div>}
+                      </div>
                     </td>
                     <td className="text-center p-1">
-                      <input
-                        type="radio"
-                        name={`light-rear-${index}`}
-                        checked={item.value === "non"}
-                        onChange={() => updateCheckItem(lightsRear, setLightsRear, index, "non")}
-                        className="h-4 w-4 accent-blue-600"
-                        required={item.value === null}
-                      />
+                      <div
+                        onClick={() => updateCheckItem(lightsRear, setLightsRear, index, "non")}
+                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center cursor-pointer ${
+                          item.value === "non" ? "border-blue-600 bg-blue-50" : "border-gray-300"
+                        }`}
+                      >
+                        {item.value === "non" && <div className="h-3 w-3 rounded-full bg-blue-600"></div>}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -298,24 +344,24 @@ export function VehicleInspectionForm() {
                   <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <td className="p-1">{item.label}</td>
                     <td className="text-center p-1">
-                      <input
-                        type="radio"
-                        name={`equipment-front-${index}`}
-                        checked={item.value === "oui"}
-                        onChange={() => updateCheckItem(equipmentFront, setEquipmentFront, index, "oui")}
-                        className="h-4 w-4 accent-blue-600"
-                        required={item.value === null}
-                      />
+                      <div
+                        onClick={() => updateCheckItem(equipmentFront, setEquipmentFront, index, "oui")}
+                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center cursor-pointer ${
+                          item.value === "oui" ? "border-blue-600 bg-blue-50" : "border-gray-300"
+                        }`}
+                      >
+                        {item.value === "oui" && <div className="h-3 w-3 rounded-full bg-blue-600"></div>}
+                      </div>
                     </td>
                     <td className="text-center p-1">
-                      <input
-                        type="radio"
-                        name={`equipment-front-${index}`}
-                        checked={item.value === "non"}
-                        onChange={() => updateCheckItem(equipmentFront, setEquipmentFront, index, "non")}
-                        className="h-4 w-4 accent-blue-600"
-                        required={item.value === null}
-                      />
+                      <div
+                        onClick={() => updateCheckItem(equipmentFront, setEquipmentFront, index, "non")}
+                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center cursor-pointer ${
+                          item.value === "non" ? "border-blue-600 bg-blue-50" : "border-gray-300"
+                        }`}
+                      >
+                        {item.value === "non" && <div className="h-3 w-3 rounded-full bg-blue-600"></div>}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -339,24 +385,24 @@ export function VehicleInspectionForm() {
                   <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <td className="p-1">{item.label}</td>
                     <td className="text-center p-1">
-                      <input
-                        type="radio"
-                        name={`equipment-rear-${index}`}
-                        checked={item.value === "oui"}
-                        onChange={() => updateCheckItem(equipmentRear, setEquipmentRear, index, "oui")}
-                        className="h-4 w-4 accent-blue-600"
-                        required={item.value === null}
-                      />
+                      <div
+                        onClick={() => updateCheckItem(equipmentRear, setEquipmentRear, index, "oui")}
+                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center cursor-pointer ${
+                          item.value === "oui" ? "border-blue-600 bg-blue-50" : "border-gray-300"
+                        }`}
+                      >
+                        {item.value === "oui" && <div className="h-3 w-3 rounded-full bg-blue-600"></div>}
+                      </div>
                     </td>
                     <td className="text-center p-1">
-                      <input
-                        type="radio"
-                        name={`equipment-rear-${index}`}
-                        checked={item.value === "non"}
-                        onChange={() => updateCheckItem(equipmentRear, setEquipmentRear, index, "non")}
-                        className="h-4 w-4 accent-blue-600"
-                        required={item.value === null}
-                      />
+                      <div
+                        onClick={() => updateCheckItem(equipmentRear, setEquipmentRear, index, "non")}
+                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center cursor-pointer ${
+                          item.value === "non" ? "border-blue-600 bg-blue-50" : "border-gray-300"
+                        }`}
+                      >
+                        {item.value === "non" && <div className="h-3 w-3 rounded-full bg-blue-600"></div>}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -459,4 +505,3 @@ export function VehicleInspectionForm() {
     </form>
   )
 }
-

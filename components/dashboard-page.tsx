@@ -96,4 +96,3 @@ function RecentActivities() {
     </div>
   )
 }
-

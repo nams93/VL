@@ -199,4 +199,3 @@ function getFuelColor(level: number) {
   if (level > 30) return "bg-amber-500"
   return "bg-red-500"
 }
-

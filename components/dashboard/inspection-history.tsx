@@ -748,4 +748,3 @@ function InspectionDetail({ inspection, onBack }: { inspection: Inspection; onBa
     </Card>
   )
 }
-

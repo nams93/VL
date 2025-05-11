@@ -71,4 +71,3 @@ export function ClientVehicleMarker({ vehicle }: { vehicle: Vehicle }) {
     </Marker>
   )
 }
-

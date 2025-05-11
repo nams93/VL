@@ -361,4 +361,3 @@ const ClientVehicleMarker = dynamic(() => import("./client-vehicle-marker").then
   ssr: false,
   loading: () => <div>Chargement...</div>,
 })
-

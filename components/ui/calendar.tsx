@@ -1,59 +1,135 @@
 "use client"
 
-import type * as React from "react"
+import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker } from "react-day-picker"
 import { fr } from "date-fns/locale"
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from "date-fns"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>
+export type CalendarProps = {
+  mode?: "single" | "range" | "multiple"
+  selected?: Date | Date[] | { from: Date; to: Date }
+  onSelect?: (date: Date | Date[] | { from: Date; to: Date } | undefined) => void
+  disabled?: { from: Date; to: Date }[] | ((date: Date) => boolean)
+  className?: string
+  classNames?: Record<string, string>
+  showOutsideDays?: boolean
+  locale?: typeof fr
+}
 
-function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
+function Calendar({
+  mode = "single",
+  selected,
+  onSelect,
+  disabled,
+  className,
+  classNames,
+  showOutsideDays = true,
+  locale = fr,
+}: CalendarProps) {
+  const [currentMonth, setCurrentMonth] = React.useState(new Date())
+
+  const handlePreviousMonth = () => {
+    setCurrentMonth(subMonths(currentMonth, 1))
+  }
+
+  const handleNextMonth = () => {
+    setCurrentMonth(addMonths(currentMonth, 1))
+  }
+
+  const daysInMonth = eachDayOfInterval({
+    start: startOfMonth(currentMonth),
+    end: endOfMonth(currentMonth),
+  })
+
+  const handleDateSelect = (day: Date) => {
+    if (onSelect) {
+      if (mode === "single") {
+        onSelect(day)
+      } else if (mode === "multiple" && Array.isArray(selected)) {
+        const isSelected = selected.some((date) => isSameDay(date, day))
+        if (isSelected) {
+          onSelect(selected.filter((date) => !isSameDay(date, day)))
+        } else {
+          onSelect([...selected, day])
+        }
+      } else if (mode === "range" && selected && "from" in selected && "to" in selected) {
+        // Simplified range selection
+        onSelect({ from: day, to: day })
+      }
+    }
+  }
+
+  const isDateSelected = (day: Date) => {
+    if (!selected) return false
+
+    if (mode === "single" && selected instanceof Date) {
+      return isSameDay(selected, day)
+    } else if (mode === "multiple" && Array.isArray(selected)) {
+      return selected.some((date) => isSameDay(date, day))
+    } else if (mode === "range" && selected && "from" in selected && "to" in selected) {
+      return isSameDay(selected.from, day) || isSameDay(selected.to, day)
+    }
+
+    return false
+  }
+
   return (
-    <DayPicker
-      showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
-      locale={fr}
-      classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
-        nav: "space-x-1 flex items-center",
-        nav_button: cn(
-          buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-        ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
-        table: "w-full border-collapse space-y-1",
-        head_row: "flex",
-        head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-        row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-        day: cn(buttonVariants({ variant: "ghost" }), "h-9 w-9 p-0 font-normal aria-selected:opacity-100"),
-        day_range_end: "day-range-end",
-        day_selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        day_today: "bg-accent text-accent-foreground",
-        day_outside:
-          "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
-        day_disabled: "text-muted-foreground opacity-50",
-        day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
-        day_hidden: "invisible",
-        ...classNames,
-      }}
-      components={{
-        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-      }}
-      {...props}
-    />
+    <div className={cn("p-3", className)}>
+      <div className="flex justify-between items-center pt-1">
+        <button
+          onClick={handlePreviousMonth}
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+          )}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <div className="text-sm font-medium">{format(currentMonth, "MMMM yyyy", { locale })}</div>
+        <button
+          onClick={handleNextMonth}
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+          )}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="mt-4 grid grid-cols-7 gap-1">
+        {["L", "M", "M", "J", "V", "S", "D"].map((day, i) => (
+          <div key={i} className="text-center text-muted-foreground text-xs">
+            {day}
+          </div>
+        ))}
+
+        {daysInMonth.map((day, i) => {
+          const isSelected = isDateSelected(day)
+          const isDayToday = isToday(day)
+
+          return (
+            <button
+              key={i}
+              onClick={() => handleDateSelect(day)}
+              className={cn(
+                "h-9 w-9 rounded-md text-center text-sm p-0 font-normal",
+                isSelected && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+                !isSelected && isDayToday && "bg-accent text-accent-foreground",
+                !isSelected && !isDayToday && "hover:bg-accent hover:text-accent-foreground",
+              )}
+            >
+              {format(day, "d")}
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 Calendar.displayName = "Calendar"
 
 export { Calendar }
-

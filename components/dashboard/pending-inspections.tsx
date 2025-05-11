@@ -16,7 +16,7 @@ export function PendingInspections() {
   const [cdeSignature, setCdeSignature] = useState<string | null>(null)
   const [cdeName, setCdeName] = useState("")
 
-  // Charger les inspections en attente depuis localStorage (simulation)
+  // Charger les inspections en attente depuis localStorage
   useEffect(() => {
     const loadPendingInspections = () => {
       try {
@@ -30,7 +30,7 @@ export function PendingInspections() {
     }
 
     loadPendingInspections()
-    // Dans un environnement réel, nous utiliserions un intervalle ou un websocket
+    // Actualiser les données périodiquement
     const interval = setInterval(loadPendingInspections, 5000)
     return () => clearInterval(interval)
   }, [])
@@ -58,7 +58,7 @@ export function PendingInspections() {
           ...item,
           status: isApproved ? "conforme" : "non-conforme",
           validatedAt: new Date().toISOString(),
-          validatedBy: cdeName || "Admin", // Dans un environnement réel, ce serait l'utilisateur connecté
+          validatedBy: cdeName || "Admin",
           cdeSignature: cdeSignature || item.cdeSignature,
           cdeName: cdeName || item.cdeName,
         }
@@ -66,7 +66,7 @@ export function PendingInspections() {
       return item
     })
 
-    // Mettre à jour localStorage
+    // Mettre à jour localStorage pour persister les données
     localStorage.setItem("pendingInspections", JSON.stringify(updatedInspections))
     setPendingInspections(updatedInspections)
     setSelectedInspection(null)
@@ -580,4 +580,3 @@ function InspectionDetail({
     </Card>
   )
 }
-

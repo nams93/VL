@@ -586,4 +586,3 @@ function AgentDetail({ agent, onBack }: { agent: Agent; onBack: () => void }) {
     </Card>
   )
 }
-

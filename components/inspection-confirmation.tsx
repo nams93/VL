@@ -1,98 +1,71 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Clock, Home, FileText } from "lucide-react"
-import Link from "next/link"
 
-interface InspectionConfirmationProps {
+export function InspectionConfirmation({
+  inspectionId,
+  vehicleInfo,
+  agentName,
+}: {
   inspectionId: string
-  vehicleInfo: {
-    immatriculation: string
-    date: string
-  }
+  vehicleInfo: { immatriculation: string; date: string }
   agentName: string
-}
-
-export function InspectionConfirmation({ inspectionId, vehicleInfo, agentName }: InspectionConfirmationProps) {
-  const [timeElapsed, setTimeElapsed] = useState(0)
-
-  // Simuler un temps d'attente avec un compteur
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeElapsed((prev) => prev + 1)
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [])
-
-  // Formater le temps écoulé en minutes et secondes
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`
-  }
+}) {
+  const router = useRouter()
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-blue-50 flex items-center justify-center">
-            <Clock className="h-8 w-8 text-blue-500" />
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+        <div className="text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+            <svg
+              className="h-6 w-6 text-green-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-          <CardTitle className="text-xl">Inspection en attente de validation</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-blue-50 p-4 rounded-md">
-            <div className="flex justify-between mb-2">
-              <span className="text-sm font-medium">Numéro d'inspection:</span>
-              <span className="text-sm">{inspectionId}</span>
-            </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-sm font-medium">Véhicule:</span>
-              <span className="text-sm">{vehicleInfo.immatriculation}</span>
-            </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-sm font-medium">Date:</span>
-              <span className="text-sm">{vehicleInfo.date}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm font-medium">Agent:</span>
-              <span className="text-sm">{agentName}</span>
-            </div>
-          </div>
-
-          <div className="text-center space-y-2">
-            <div className="flex items-center justify-center gap-2 text-blue-600">
-              <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></div>
-              <p>En attente de validation par le COS</p>
-            </div>
-            <p className="text-sm text-gray-500">Temps d'attente: {formatTime(timeElapsed)}</p>
-          </div>
-
-          <div className="bg-amber-50 p-3 rounded-md border border-amber-200">
-            <p className="text-sm text-amber-800">
-              Votre inspection a été soumise avec succès et est en attente de validation par le COS. Vous pouvez quitter
-              cette page et revenir à l'accueil.
+          <h3 className="mt-4 text-lg font-medium text-gray-900">Inspection enregistrée avec succès</h3>
+          <div className="mt-3">
+            <p className="text-sm text-gray-500">
+              L'inspection du véhicule <span className="font-medium">{vehicleInfo.immatriculation}</span> a été
+              enregistrée avec succès.
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              Numéro de référence: <span className="font-medium">{inspectionId}</span>
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              Agent: <span className="font-medium">{agentName}</span>
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              Date: <span className="font-medium">{vehicleInfo.date}</span>
+            </p>
+            <p className="text-sm text-blue-600 mt-3">
+              Vous pourrez revenir sur cette fiche ultérieurement pour apporter des modifications si nécessaire.
             </p>
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-2 pt-2">
-            <Button asChild className="flex-1">
-              <Link href="/">
-                <Home className="mr-2 h-4 w-4" />
-                Retour à l'accueil
-              </Link>
+          <div className="mt-5 flex flex-col gap-3">
+            <Button
+              type="button"
+              className="w-full bg-green-600 hover:bg-green-700"
+              onClick={() => router.push("/radio-equipment")}
+            >
+              Passer à la perception radio
             </Button>
-            <Button variant="outline" className="flex-1">
-              <FileText className="mr-2 h-4 w-4" />
-              Voir les détails
-            </Button>
+            <button
+              type="button"
+              className="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:text-sm"
+              onClick={() => (window.location.href = "/")}
+            >
+              Retour à l'accueil
+            </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
-

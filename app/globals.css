@@ -75,3 +75,19 @@
   }
 }
 
+/* Styles personnalisés pour les boutons radio */
+.custom-radio {
+  @apply h-5 w-5 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all duration-200;
+}
+
+.custom-radio.checked {
+  @apply border-blue-600 bg-blue-50;
+}
+
+.custom-radio.unchecked {
+  @apply border-gray-300 hover:border-blue-400;
+}
+
+.custom-radio-dot {
+  @apply h-3 w-3 rounded-full bg-blue-600;
+}

@@ -347,4 +347,3 @@ function MaintenanceStatusBadge({ status }: { status: MaintenanceStatus }) {
       )
   }
 }
-
