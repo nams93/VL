@@ -20,7 +20,7 @@ type FormAuthorization = {
 // Clés pour le stockage local
 const AGENT_STORAGE_KEY = "gpis-current-agent"
 const FORM_AUTH_STORAGE_KEY = "gpis-form-authorizations"
-const ADMIN_ACCOUNTS_KEY = "gpis-admin-accounts"
+const ADMIN_ACCOUNTS_KEY = "adminAccounts"
 
 // Service d'authentification
 export const authService = {
@@ -30,7 +30,7 @@ export const authService = {
     if (!storedAccounts) {
       // Créer des comptes par défaut si aucun n'existe
       const defaultAccounts = [
-        { id: "3269", name: "Administrateur Système", role: "admin" as UserRole },
+        { id: "3269", name: "Manassé DSSI", role: "admin" as UserRole },
         { id: "9999", name: "Superviseur Principal", role: "supervisor" as UserRole },
       ]
 
@@ -45,6 +45,20 @@ export const authService = {
       }
 
       localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(defaultAccounts))
+    } else {
+      // Vérifier si le compte Manassé DSSI existe déjà
+      try {
+        const accounts = JSON.parse(storedAccounts)
+        const manasseExists = accounts.some((account: any) => account.id === "3269")
+
+        // Si le compte n'existe pas, l'ajouter
+        if (!manasseExists) {
+          accounts.push({ id: "3269", name: "Manassé DSSI", role: "admin" as UserRole })
+          localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts))
+        }
+      } catch (error) {
+        console.error("Erreur lors de la vérification des comptes admin:", error)
+      }
     }
   },
 
@@ -261,5 +275,32 @@ export const authService = {
       console.error("Erreur lors de la récupération des autorisations:", error)
       return []
     }
+  },
+
+  // Générer des notifications de test pour un agent
+  generateTestNotifications: (agentId: string): void => {
+    const { notificationService } = require("./notification-service")
+
+    // Générer quelques notifications de test
+    notificationService.addNotification(
+      "info",
+      "Test de notification",
+      "Ceci est une notification de test pour vérifier le système",
+      agentId,
+    )
+
+    notificationService.addNotification(
+      "warning",
+      "Maintenance planifiée",
+      "Une maintenance est planifiée pour demain à 10h",
+      agentId,
+    )
+
+    notificationService.addNotification(
+      "error",
+      "Alerte critique",
+      "Une alerte critique a été détectée sur le système",
+      agentId,
+    )
   },
 }
