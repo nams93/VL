@@ -30,15 +30,39 @@ export const authService = {
     if (!storedAccounts) {
       // Créer des comptes par défaut si aucun n'existe
       const defaultAccounts = [
-        { id: "3269M", name: "Administrateur Système", role: "admin" as UserRole },
-        { id: "supervisor", name: "Superviseur Principal", role: "supervisor" as UserRole },
+        { id: "3269", name: "Administrateur Système", role: "admin" as UserRole },
+        { id: "9999", name: "Superviseur Principal", role: "supervisor" as UserRole },
       ]
+
+      // Ajouter les comptes COS (Bravo 01 à Bravo 17)
+      for (let i = 1; i <= 17; i++) {
+        const bravoId = `Bravo ${i.toString().padStart(2, "0")}`
+        defaultAccounts.push({
+          id: bravoId,
+          name: `Opérateur COS ${bravoId}`,
+          role: "admin" as UserRole,
+        })
+      }
+
       localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(defaultAccounts))
     }
   },
 
   // Connexion d'un agent avec rôle
   login: (agentId: string, agentName: string, role: UserRole = "agent"): Agent => {
+    if (!agentId.trim()) {
+      throw new Error("L'identifiant est obligatoire")
+    }
+
+    if (!agentName.trim()) {
+      throw new Error("Le nom est obligatoire")
+    }
+
+    // Vérifier le format de l'ID (4 chiffres) sauf pour les comptes spéciaux
+    if (!/^\d{4}$/.test(agentId) && !agentId.startsWith("Bravo ")) {
+      throw new Error("L'identifiant doit contenir exactement 4 chiffres")
+    }
+
     // Initialiser les comptes administrateurs si nécessaire
     authService.initializeAdminAccounts()
 
@@ -54,7 +78,7 @@ export const authService = {
 
     const agent: Agent = {
       id: agentId,
-      name: agentName || `Agent ${agentId}`,
+      name: agentName, // Toujours utiliser le nom fourni ou celui du compte admin
       loginTime: new Date().toISOString(),
       role,
       lastActive: new Date().toISOString(),
@@ -113,6 +137,40 @@ export const authService = {
       console.error("Erreur lors de la récupération des comptes admin:", error)
       return []
     }
+  },
+
+  // Ajouter ou mettre à jour un compte administrateur
+  addAdminAccount: (id: string, name: string, role: UserRole): void => {
+    if (!id.trim() || !name.trim()) {
+      throw new Error("L'identifiant et le nom sont obligatoires")
+    }
+
+    // Vérifier le format de l'ID (4 chiffres) sauf pour les comptes spéciaux
+    if (!/^\d{4}$/.test(id) && !id.startsWith("Bravo ")) {
+      throw new Error("L'identifiant doit contenir exactement 4 chiffres")
+    }
+
+    const accounts = authService.getAdminAccounts()
+
+    // Vérifier si le compte existe déjà
+    const existingIndex = accounts.findIndex((account) => account.id === id)
+
+    if (existingIndex >= 0) {
+      // Mettre à jour le compte existant
+      accounts[existingIndex] = { id, name, role }
+    } else {
+      // Ajouter un nouveau compte
+      accounts.push({ id, name, role })
+    }
+
+    localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(accounts))
+  },
+
+  // Supprimer un compte administrateur
+  removeAdminAccount: (id: string): void => {
+    const accounts = authService.getAdminAccounts()
+    const filteredAccounts = accounts.filter((account) => account.id !== id)
+    localStorage.setItem(ADMIN_ACCOUNTS_KEY, JSON.stringify(filteredAccounts))
   },
 
   // Enregistrer une autorisation pour un formulaire

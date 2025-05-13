@@ -7,16 +7,26 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { SignaturePad } from "@/components/signature-pad"
 import { Save, Download, RotateCcw, ArrowLeft, CheckCircle, Info, AlertTriangle, ShieldAlert } from "lucide-react"
 // Importer le service d'authentification
 import { authService } from "@/lib/auth-service"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface RadioEquipmentFormProps {
   formId?: string
   isEditing?: boolean
 }
+
+// Options pour les menus déroulants
+const DEPORTE_OPTIONS = Array.from({ length: 14 }, (_, i) => `GOLF ${(i + 1).toString().padStart(2, "0")}`)
+const RADIO_OPTIONS = Array.from({ length: 14 }, (_, i) => `RADIO ${(i + 1).toString().padStart(2, "0")}`)
+
+const STATUS_OPTIONS = [
+  { value: "RAS", label: "RAS", color: "text-green-600" },
+  { value: "MANQUE_BOUTON", label: "Manque un bouton", color: "text-orange-500" },
+  { value: "NE_MARCHE_PAS", label: "Rien ne marche", color: "text-red-600" },
+]
 
 export function RadioEquipmentForm({ formId, isEditing = false }: RadioEquipmentFormProps) {
   const router = useRouter()
@@ -121,7 +131,7 @@ export function RadioEquipmentForm({ formId, isEditing = false }: RadioEquipment
     }
 
     checkAuthorization()
-  }, [isEditing, formId, router]) // Remove agentInfo from dependencies
+  }, [isEditing, formId, router])
 
   // Si la page est en cours de chargement
   if (isLoading) {
@@ -317,6 +327,18 @@ export function RadioEquipmentForm({ formId, isEditing = false }: RadioEquipment
     router.push("/radio-equipment-list")
   }
 
+  // Fonction pour obtenir la classe de couleur en fonction du statut
+  const getStatusColorClass = (status: string) => {
+    const option = STATUS_OPTIONS.find((opt) => opt.value === status)
+    return option ? option.color : "text-gray-700"
+  }
+
+  // Fonction pour obtenir le libellé en fonction du statut
+  const getStatusLabel = (status: string) => {
+    const option = STATUS_OPTIONS.find((opt) => opt.value === status)
+    return option ? option.label : status
+  }
+
   return (
     <div className="container mx-auto py-6 max-w-4xl">
       <Card>
@@ -462,28 +484,72 @@ export function RadioEquipmentForm({ formId, isEditing = false }: RadioEquipment
                     {deportes.map((deporte, index) => (
                       <tr key={index} className="border-b">
                         <td className="p-2">
-                          <Input
-                            value={deporte.id}
-                            onChange={(e) => updateDeporte(index, "id", e.target.value)}
-                            placeholder={`Déporté ${index + 1}`}
-                            className="h-8 text-sm"
-                          />
+                          <Select
+                            value={deporte.id || "none"}
+                            onValueChange={(value) => updateDeporte(index, "id", value === "none" ? "" : value)}
+                          >
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue placeholder={`Sélectionner un déporté`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sélectionner...</SelectItem>
+                              {DEPORTE_OPTIONS.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </td>
                         <td className="p-2">
-                          <Textarea
-                            value={deporte.perceptionNote}
-                            onChange={(e) => updateDeporte(index, "perceptionNote", e.target.value)}
-                            placeholder="Constatations en perception"
-                            className="h-16 text-sm"
-                          />
+                          <Select
+                            value={deporte.perceptionNote || "none"}
+                            onValueChange={(value) =>
+                              updateDeporte(index, "perceptionNote", value === "none" ? "" : value)
+                            }
+                          >
+                            <SelectTrigger
+                              className={`h-9 text-sm ${deporte.perceptionNote ? getStatusColorClass(deporte.perceptionNote) : ""}`}
+                            >
+                              <SelectValue placeholder="État en perception">
+                                {deporte.perceptionNote ? getStatusLabel(deporte.perceptionNote) : "État en perception"}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sélectionner...</SelectItem>
+                              {STATUS_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value} className={option.color}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </td>
                         <td className="p-2">
-                          <Textarea
-                            value={deporte.reintegrationNote}
-                            onChange={(e) => updateDeporte(index, "reintegrationNote", e.target.value)}
-                            placeholder="Constatations en réintégration"
-                            className="h-16 text-sm"
-                          />
+                          <Select
+                            value={deporte.reintegrationNote || "none"}
+                            onValueChange={(value) =>
+                              updateDeporte(index, "reintegrationNote", value === "none" ? "" : value)
+                            }
+                          >
+                            <SelectTrigger
+                              className={`h-9 text-sm ${deporte.reintegrationNote ? getStatusColorClass(deporte.reintegrationNote) : ""}`}
+                            >
+                              <SelectValue placeholder="État en réintégration">
+                                {deporte.reintegrationNote
+                                  ? getStatusLabel(deporte.reintegrationNote)
+                                  : "État en réintégration"}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sélectionner...</SelectItem>
+                              {STATUS_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value} className={option.color}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </td>
                       </tr>
                     ))}
@@ -601,28 +667,72 @@ export function RadioEquipmentForm({ formId, isEditing = false }: RadioEquipment
                     {radios.map((radio, index) => (
                       <tr key={index} className="border-b">
                         <td className="p-2">
-                          <Input
-                            value={radio.id}
-                            onChange={(e) => updateRadio(index, "id", e.target.value)}
-                            placeholder={`Radio ${index + 1}`}
-                            className="h-8 text-sm"
-                          />
+                          <Select
+                            value={radio.id || "none"}
+                            onValueChange={(value) => updateRadio(index, "id", value === "none" ? "" : value)}
+                          >
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue placeholder={`Sélectionner une radio`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sélectionner...</SelectItem>
+                              {RADIO_OPTIONS.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </td>
                         <td className="p-2">
-                          <Textarea
-                            value={radio.perceptionNote}
-                            onChange={(e) => updateRadio(index, "perceptionNote", e.target.value)}
-                            placeholder="Constatations en perception"
-                            className="h-16 text-sm"
-                          />
+                          <Select
+                            value={radio.perceptionNote || "none"}
+                            onValueChange={(value) =>
+                              updateRadio(index, "perceptionNote", value === "none" ? "" : value)
+                            }
+                          >
+                            <SelectTrigger
+                              className={`h-9 text-sm ${radio.perceptionNote ? getStatusColorClass(radio.perceptionNote) : ""}`}
+                            >
+                              <SelectValue placeholder="État en perception">
+                                {radio.perceptionNote ? getStatusLabel(radio.perceptionNote) : "État en perception"}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sélectionner...</SelectItem>
+                              {STATUS_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value} className={option.color}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </td>
                         <td className="p-2">
-                          <Textarea
-                            value={radio.reintegrationNote}
-                            onChange={(e) => updateRadio(index, "reintegrationNote", e.target.value)}
-                            placeholder="Constatations en réintégration"
-                            className="h-16 text-sm"
-                          />
+                          <Select
+                            value={radio.reintegrationNote || "none"}
+                            onValueChange={(value) =>
+                              updateRadio(index, "reintegrationNote", value === "none" ? "" : value)
+                            }
+                          >
+                            <SelectTrigger
+                              className={`h-9 text-sm ${radio.reintegrationNote ? getStatusColorClass(radio.reintegrationNote) : ""}`}
+                            >
+                              <SelectValue placeholder="État en réintégration">
+                                {radio.reintegrationNote
+                                  ? getStatusLabel(radio.reintegrationNote)
+                                  : "État en réintégration"}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Sélectionner...</SelectItem>
+                              {STATUS_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value} className={option.color}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </td>
                       </tr>
                     ))}

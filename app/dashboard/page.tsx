@@ -11,11 +11,11 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Vérifier si l'utilisateur est administrateur
+    // Vérifier si l'utilisateur est administrateur ou superviseur
     const currentAgent = authService.getCurrentAgent()
-    if (!currentAgent || currentAgent.role !== "admin") {
-      // Rediriger vers la page de connexion si l'utilisateur n'est pas administrateur
-      router.push("/login")
+    if (!currentAgent || (currentAgent.role !== "admin" && currentAgent.role !== "supervisor")) {
+      // Rediriger vers la page de connexion si l'utilisateur n'a pas les droits nécessaires
+      router.push("/")
       return
     }
 
@@ -26,7 +26,7 @@ export default function DashboardPage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="mb-4 text-2xl font-bold">Chargement du tableau de bord...</div>
+          <div className="mb-4 text-xl font-bold">Chargement du tableau de bord...</div>
           <div className="text-gray-500">Vérification des autorisations...</div>
         </div>
       </div>
@@ -34,12 +34,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <DashboardHeader />
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Tableau de bord</h2>
-        </div>
+    <div className="container mx-auto py-3 px-3 max-w-7xl">
+      <DashboardHeader
+        title="Tableau de Bord"
+        subtitle="Gestion et suivi du parc automobile"
+        showNotifications={true}
+        showConnectionStatus={true}
+      />
+      <div className="mt-3">
         <DashboardTabs />
       </div>
     </div>

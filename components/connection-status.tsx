@@ -2,35 +2,42 @@
 
 import { useState, useEffect } from "react"
 import { Wifi, WifiOff } from "lucide-react"
-import { isOnline, setupConnectivityListeners } from "@/lib/sync-service"
+import { Badge } from "@/components/ui/badge"
+import { useSyncState } from "@/hooks/use-sync-state"
 
 export function ConnectionStatus() {
-  const [online, setOnline] = useState(isOnline())
+  const { isOnline, pendingItems } = useSyncState()
+  const [showPending, setShowPending] = useState(false)
 
   useEffect(() => {
-    const handleOnline = () => setOnline(true)
-    const handleOffline = () => setOnline(false)
-
-    // Configurer les écouteurs d'événements
-    const cleanup = setupConnectivityListeners(handleOnline, handleOffline)
-
-    // Nettoyer les écouteurs
-    return cleanup
-  }, [])
-
-  if (online) {
-    return (
-      <div className="flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
-        <Wifi className="h-3 w-3 mr-1" />
-        <span>Connecté</span>
-      </div>
-    )
-  }
+    // Afficher le nombre d'éléments en attente pendant 5 secondes si > 0
+    if (pendingItems > 0) {
+      setShowPending(true)
+      const timer = setTimeout(() => setShowPending(false), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [pendingItems])
 
   return (
-    <div className="flex items-center text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
-      <WifiOff className="h-3 w-3 mr-1" />
-      <span>Hors ligne</span>
-    </div>
+    <Badge
+      variant="outline"
+      className={`flex items-center gap-1 ${
+        isOnline ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"
+      }`}
+    >
+      {isOnline ? (
+        <>
+          <Wifi className="h-3 w-3" />
+          <span className="text-xs">
+            {showPending && pendingItems > 0 ? `Synchronisation: ${pendingItems} en attente` : "Connecté"}
+          </span>
+        </>
+      ) : (
+        <>
+          <WifiOff className="h-3 w-3" />
+          <span className="text-xs">Hors ligne</span>
+        </>
+      )}
+    </Badge>
   )
 }

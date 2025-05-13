@@ -30,12 +30,11 @@ export function middleware(request: NextRequest) {
 
   // Protection spéciale pour le tableau de bord
   if (pathname.startsWith("/dashboard")) {
-    // Vérifier si l'agent est administrateur (ID 3269M)
-    // Note: Dans un vrai middleware, nous vérifierions le rôle via un JWT ou une session
-    // Ici, nous utilisons un cookie pour simuler cette vérification
-    const isAdmin = request.cookies.get("gpis-agent-role")?.value === "admin"
+    // Vérifier si l'agent est administrateur ou superviseur
+    const agentRole = request.cookies.get("gpis-agent-role")?.value
 
-    if (!isAdmin) {
+    // Seuls les administrateurs et superviseurs peuvent accéder au tableau de bord
+    if (agentRole !== "admin" && agentRole !== "supervisor") {
       // Rediriger vers la page d'accueil avec un message d'accès restreint
       const url = request.nextUrl.clone()
       url.pathname = "/"

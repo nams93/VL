@@ -1,60 +1,65 @@
 "use client"
 
-import type React from "react"
-
-import { Button } from "@/components/ui/button"
 import { NotificationBell } from "@/components/notification-bell"
 import { ConnectionStatus } from "@/components/connection-status"
+import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { LogOut, Settings, User } from "lucide-react"
+import { authService } from "@/lib/auth-service"
 
 interface DashboardHeaderProps {
   title: string
   subtitle?: string
   showNotifications?: boolean
   showConnectionStatus?: boolean
-  actions?: React.ReactNode
 }
 
 export function DashboardHeader({
   title,
   subtitle,
-  showNotifications = true,
-  showConnectionStatus = true,
-  actions,
+  showNotifications = false,
+  showConnectionStatus = false,
 }: DashboardHeaderProps) {
   const router = useRouter()
-  const [userRole, setUserRole] = useState<string | null>(null)
-
-  useEffect(() => {
-    // Récupérer le rôle de l'utilisateur depuis le localStorage
-    const role = localStorage.getItem("userRole")
-    setUserRole(role)
-  }, [])
 
   const handleLogout = () => {
-    // Supprimer les informations d'authentification
-    localStorage.removeItem("isAuthenticated")
-    localStorage.removeItem("agentId")
-    localStorage.removeItem("userRole")
-
-    // Rediriger vers la page de connexion
+    authService.logout()
     router.push("/login")
   }
 
+  const currentAgent = authService.getCurrentAgent()
+
   return (
-    <div className="border-b pb-4 mb-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">{title}</h1>
-          {subtitle && <p className="text-gray-500">{subtitle}</p>}
-        </div>
-        <div className="flex items-center gap-4">
-          {showConnectionStatus && <ConnectionStatus />}
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+      <div>
+        <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+        {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+      </div>
+
+      <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+        {showConnectionStatus && <ConnectionStatus />}
+
+        <div className="flex items-center gap-2">
+          {currentAgent && (
+            <div className="hidden md:flex items-center mr-2">
+              <div className="bg-blue-100 text-blue-700 p-1.5 rounded-full mr-2">
+                <User className="h-4 w-4" />
+              </div>
+              <div className="text-sm">
+                <div className="font-medium">{currentAgent.name || "Agent"}</div>
+                <div className="text-xs text-gray-500 capitalize">{currentAgent.role || "Utilisateur"}</div>
+              </div>
+            </div>
+          )}
+
           {showNotifications && <NotificationBell />}
-          {actions}
-          <Button variant="outline" size="sm" onClick={handleLogout}>
-            Déconnexion
+
+          <Button variant="outline" size="icon" className="h-8 w-8">
+            <Settings className="h-4 w-4" />
+          </Button>
+
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleLogout}>
+            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </div>

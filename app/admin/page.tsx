@@ -406,6 +406,51 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Opérateurs COS</CardTitle>
+            <CardDescription>Comptes des opérateurs du Centre Opérationnel de Sécurité (Bravo 01-17)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mt-6">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ID
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Nom
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Rôle
+                    </th>
+                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Statut
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {adminAccounts
+                    .filter((account) => account.id.startsWith("Bravo "))
+                    .map((account) => (
+                      <tr key={account.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">{account.id}</td>
+                        <td className="px-4 py-3">{account.name}</td>
+                        <td className="px-4 py-3">
+                          <Badge className="bg-purple-100 text-purple-800">Administrateur</Badge>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Badge className="bg-green-100 text-green-800">Actif</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Maintenance du système</CardTitle>

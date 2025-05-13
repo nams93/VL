@@ -1,153 +1,132 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { notificationService } from "@/lib/notification-service"
 import { Badge } from "@/components/ui/badge"
 import { authService } from "@/lib/auth-service"
-import { notificationService, type Notification } from "@/lib/notification-service"
 
 export function NotificationBell() {
-  const router = useRouter()
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [isOpen, setIsOpen] = useState(false)
 
   useEffect(() => {
-    // Charger les notifications au chargement du composant
+    // Charger les notifications
+    const loadNotifications = () => {
+      const currentAgent = authService.getCurrentAgent()
+      if (currentAgent) {
+        const allNotifications = notificationService.getAllNotifications()
+        const agentNotifications = notificationService.getNotificationsForAgent(currentAgent.id)
+        setNotifications(agentNotifications)
+        setUnreadCount(agentNotifications.filter((n) => !n.read).length)
+      }
+    }
+
     loadNotifications()
-
-    // Créer des notifications automatiques
-    notificationService.createAutomaticNotifications()
-
-    // Actualiser les notifications toutes les minutes
-    const interval = setInterval(loadNotifications, 60000)
+    // Rafraîchir les notifications toutes les 30 secondes
+    const interval = setInterval(loadNotifications, 30000)
     return () => clearInterval(interval)
   }, [])
-
-  const loadNotifications = () => {
-    const currentAgent = authService.getCurrentAgent()
-    if (currentAgent) {
-      const agentNotifications = notificationService.getNotificationsForAgent(currentAgent.id)
-      setNotifications(agentNotifications)
-    }
-  }
-
-  const handleNotificationClick = (notification: Notification) => {
-    // Marquer comme lu
-    notificationService.markAsRead(notification.id)
-
-    // Fermer le menu
-    setShowNotifications(false)
-
-    // Recharger les notifications
-    loadNotifications()
-
-    // Rediriger si un lien est spécifié
-    if (notification.link) {
-      router.push(notification.link)
-    }
-  }
 
   const handleMarkAllAsRead = () => {
     const currentAgent = authService.getCurrentAgent()
     if (currentAgent) {
       notificationService.markAllAsRead(currentAgent.id)
-      loadNotifications()
+      setNotifications(notifications.map((n) => ({ ...n, read: true })))
+      setUnreadCount(0)
     }
   }
 
-  const handleViewAllNotifications = () => {
-    setShowNotifications(false)
-    router.push("/notifications")
-  }
-
-  // Filtrer les notifications non lues
-  const unreadNotifications = notifications.filter((notif) => !notif.read)
-
-  // Obtenir la couleur de la notification
-  const getNotificationColor = (type: string) => {
-    switch (type) {
-      case "info":
-        return "bg-blue-50 border-blue-200 text-blue-800"
-      case "warning":
-        return "bg-amber-50 border-amber-200 text-amber-800"
-      case "error":
-        return "bg-red-50 border-red-200 text-red-800"
-      case "success":
-        return "bg-green-50 border-green-200 text-green-800"
-      default:
-        return "bg-gray-50 border-gray-200 text-gray-800"
-    }
+  const handleMarkAsRead = (id: string) => {
+    notificationService.markAsRead(id)
+    setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    setUnreadCount((prev) => Math.max(0, prev - 1))
   }
 
   return (
-    <div className="relative">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="relative"
-        onClick={() => setShowNotifications(!showNotifications)}
-        aria-label="Notifications"
-      >
-        <Bell className="h-5 w-5" />
-        {unreadNotifications.length > 0 && (
-          <Badge
-            className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white"
-            aria-label={`${unreadNotifications.length} notifications non lues`}
-          >
-            {unreadNotifications.length}
-          </Badge>
-        )}
-      </Button>
-
-      {showNotifications && (
-        <Card className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto z-50 shadow-lg">
-          <div className="p-3 border-b flex justify-between items-center">
-            <div className="font-medium">Notifications</div>
-            {notifications.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead}>
-                Tout marquer comme lu
-              </Button>
-            )}
-          </div>
-
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="icon" className="relative">
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0" align="end">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h3 className="font-medium">Notifications</h3>
+          {unreadCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead} className="text-xs">
+              Tout marquer comme lu
+            </Button>
+          )}
+        </div>
+        <div className="max-h-[300px] overflow-auto">
           {notifications.length > 0 ? (
-            <div>
-              {notifications.slice(0, 5).map((notification) => (
+            <div className="divide-y">
+              {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-3 border-b hover:bg-gray-50 cursor-pointer ${!notification.read ? "bg-blue-50" : ""}`}
-                  onClick={() => handleNotificationClick(notification)}
+                  className={`p-4 ${notification.read ? "" : "bg-blue-50"}`}
+                  onClick={() => !notification.read && handleMarkAsRead(notification.id)}
                 >
-                  <div className="flex justify-between">
-                    <div className="font-medium flex items-center gap-2">
-                      {!notification.read && <div className="h-2 w-2 bg-blue-500 rounded-full" aria-hidden="true" />}
-                      {notification.title}
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-full ${getNotificationTypeColor(notification.type)}`}>
+                      {getNotificationTypeIcon(notification.type)}
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(notification.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-sm font-medium">{notification.title}</h4>
+                        <span className="text-xs text-gray-500">{notification.time}</span>
+                      </div>
+                      <p className="text-sm text-gray-600">{notification.message}</p>
+                      {!notification.read && (
+                        <Badge className="mt-2 bg-blue-100 text-blue-800 hover:bg-blue-200">Nouveau</Badge>
+                      )}
                     </div>
                   </div>
-                  <div className="text-sm mt-1">{notification.message}</div>
-                  {notification.link && <div className="text-xs text-blue-500 mt-1">Cliquer pour voir les détails</div>}
                 </div>
               ))}
-
-              {notifications.length > 5 && (
-                <div className="p-3 text-center border-t">
-                  <Button variant="link" onClick={handleViewAllNotifications}>
-                    Voir toutes les notifications ({notifications.length})
-                  </Button>
-                </div>
-              )}
             </div>
           ) : (
-            <div className="p-4 text-center text-gray-500">Aucune notification</div>
+            <div className="p-4 text-center text-gray-500">
+              <Bell className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+              <p>Aucune notification</p>
+            </div>
           )}
-        </Card>
-      )}
-    </div>
+        </div>
+        <div className="p-2 border-t">
+          <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setIsOpen(false)}>
+            Voir toutes les notifications
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   )
+}
+
+function getNotificationTypeColor(type: string) {
+  switch (type) {
+    case "alert":
+      return "bg-red-100 text-red-700"
+    case "warning":
+      return "bg-amber-100 text-amber-700"
+    case "info":
+      return "bg-blue-100 text-blue-700"
+    case "success":
+      return "bg-green-100 text-green-700"
+    default:
+      return "bg-gray-100 text-gray-700"
+  }
+}
+
+function getNotificationTypeIcon(type: string) {
+  // Vous pouvez importer et utiliser différentes icônes en fonction du type
+  return <Bell className="h-4 w-4" />
 }
