@@ -1,164 +1,140 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell, Info, AlertTriangle, AlertCircle, CheckCircle } from "lucide-react"
+import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { notificationService, type NotificationType } from "@/lib/notification-service"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { authService } from "@/lib/auth-service"
-import Link from "next/link"
+import { useTheme } from "@/components/theme-provider"
+
+type Notification = {
+  id: string
+  title: string
+  message: string
+  timestamp: number
+  read: boolean
+  type: "info" | "warning" | "error" | "success"
+}
 
 export function NotificationBell() {
-  const [notifications, setNotifications] = useState<any[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const [isOpen, setIsOpen] = useState(false)
+  const { theme } = useTheme()
 
   useEffect(() => {
-    // Charger les notifications
-    const loadNotifications = () => {
-      const currentUser = authService.getCurrentUser()
-      if (currentUser) {
-        const agentNotifications = notificationService.getNotificationsForAgent(currentUser.id)
-        setNotifications(agentNotifications)
-        setUnreadCount(agentNotifications.filter((n) => !n.read).length)
-      }
-    }
+    // Charger les notifications depuis le stockage local
+    const storedNotifications = localStorage.getItem("gpis-notifications")
+    if (storedNotifications) {
+      const parsedNotifications = JSON.parse(storedNotifications)
+      setNotifications(parsedNotifications)
 
-    loadNotifications()
-    // Rafraîchir les notifications toutes les 30 secondes
-    const interval = setInterval(loadNotifications, 30000)
-    return () => clearInterval(interval)
+      // Calculer le nombre de notifications non lues
+      const unread = parsedNotifications.filter((notif: Notification) => !notif.read).length
+      setUnreadCount(unread)
+    }
   }, [])
 
-  const handleMarkAllAsRead = () => {
-    const currentUser = authService.getCurrentUser()
-    if (currentUser) {
-      notificationService.markAllAsRead(currentUser.id)
-      setNotifications(notifications.map((n) => ({ ...n, read: true })))
-      setUnreadCount(0)
-    }
+  const markAsRead = (id: string) => {
+    const updatedNotifications = notifications.map((notif) => {
+      if (notif.id === id) {
+        return { ...notif, read: true }
+      }
+      return notif
+    })
+
+    setNotifications(updatedNotifications)
+    localStorage.setItem("gpis-notifications", JSON.stringify(updatedNotifications))
+
+    // Mettre à jour le compteur
+    const unread = updatedNotifications.filter((notif) => !notif.read).length
+    setUnreadCount(unread)
   }
 
-  const handleMarkAsRead = (id: string) => {
-    notificationService.markAsRead(id)
-    setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)))
-    setUnreadCount((prev) => Math.max(0, prev - 1))
+  const markAllAsRead = () => {
+    const updatedNotifications = notifications.map((notif) => ({ ...notif, read: true }))
+    setNotifications(updatedNotifications)
+    localStorage.setItem("gpis-notifications", JSON.stringify(updatedNotifications))
+    setUnreadCount(0)
+  }
+
+  const formatTime = (timestamp: number) => {
+    const date = new Date(timestamp)
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  }
+
+  const getNotificationColor = (type: string) => {
+    switch (type) {
+      case "info":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+      case "warning":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+      case "error":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+      case "success":
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+    }
   }
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="relative">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
+            <Badge
+              className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.25rem] h-5 flex items-center justify-center bg-red-500 text-white dark:bg-red-600"
+              variant="destructive"
+            >
+              {unreadCount}
+            </Badge>
           )}
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between p-2 border-b">
-          <h3 className="font-medium text-sm">Notifications</h3>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 max-h-[70vh] overflow-y-auto">
+        <DropdownMenuLabel className="flex justify-between items-center">
+          <span>Notifications</span>
           {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead} className="text-xs h-7 px-2">
+            <Button variant="ghost" size="sm" onClick={markAllAsRead} className="h-8 text-xs">
               Tout marquer comme lu
             </Button>
           )}
-        </div>
-        <div className="max-h-[300px] overflow-auto">
-          {notifications.length > 0 ? (
-            <div className="divide-y">
-              {notifications.slice(0, 5).map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-2 ${notification.read ? "" : "bg-blue-50"}`}
-                  onClick={() => !notification.read && handleMarkAsRead(notification.id)}
-                >
-                  <div className="flex items-start gap-2">
-                    <div className={`p-1 rounded-full ${getNotificationTypeColor(notification.type)}`}>
-                      {getNotificationTypeIcon(notification.type)}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <h4 className="text-xs font-medium line-clamp-1">{notification.title}</h4>
-                        <span className="text-[10px] text-gray-500">{formatTimestamp(notification.timestamp)}</span>
-                      </div>
-                      <p className="text-xs text-gray-600 line-clamp-1">{notification.message}</p>
-                      {!notification.read && (
-                        <Badge className="mt-1 py-0 h-4 text-[10px] bg-blue-100 text-blue-800 hover:bg-blue-200">
-                          Nouveau
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {notifications.length === 0 ? (
+          <div className="py-4 px-2 text-center text-sm text-gray-500 dark:text-gray-400">Aucune notification</div>
+        ) : (
+          notifications.map((notif) => (
+            <DropdownMenuItem
+              key={notif.id}
+              className={`flex flex-col items-start p-3 cursor-pointer transition-colors duration-300 ${
+                !notif.read ? "bg-gray-50 dark:bg-gray-800/50" : ""
+              }`}
+              onClick={() => markAsRead(notif.id)}
+            >
+              <div className="flex justify-between w-full">
+                <div className={`text-xs px-1.5 py-0.5 rounded ${getNotificationColor(notif.type)}`}>
+                  {notif.type === "info" && "Information"}
+                  {notif.type === "warning" && "Avertissement"}
+                  {notif.type === "error" && "Erreur"}
+                  {notif.type === "success" && "Succès"}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-3 text-center text-gray-500">
-              <Bell className="h-6 w-6 mx-auto mb-1 text-gray-300" />
-              <p className="text-xs">Aucune notification</p>
-            </div>
-          )}
-        </div>
-        <div className="p-2 border-t">
-          <Link href="/notifications">
-            <Button variant="outline" size="sm" className="w-full text-xs h-7" onClick={() => setIsOpen(false)}>
-              Voir toutes les notifications
-            </Button>
-          </Link>
-        </div>
-      </PopoverContent>
-    </Popover>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{formatTime(notif.timestamp)}</span>
+              </div>
+              <div className="mt-1 font-medium text-sm">{notif.title}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{notif.message}</div>
+            </DropdownMenuItem>
+          ))
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
-}
-
-function getNotificationTypeColor(type: NotificationType) {
-  switch (type) {
-    case "error":
-      return "bg-red-100 text-red-700"
-    case "warning":
-      return "bg-amber-100 text-amber-700"
-    case "info":
-      return "bg-blue-100 text-blue-700"
-    case "success":
-      return "bg-green-100 text-green-700"
-    default:
-      return "bg-gray-100 text-gray-700"
-  }
-}
-
-function getNotificationTypeIcon(type: NotificationType) {
-  switch (type) {
-    case "info":
-      return <Info className="h-3 w-3" />
-    case "warning":
-      return <AlertTriangle className="h-3 w-3" />
-    case "error":
-      return <AlertCircle className="h-3 w-3" />
-    case "success":
-      return <CheckCircle className="h-3 w-3" />
-    default:
-      return <Bell className="h-3 w-3" />
-  }
-}
-
-function formatTimestamp(timestamp: string): string {
-  const date = new Date(timestamp)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-
-  if (diffMins < 1) return "À l'instant"
-  if (diffMins < 60) return `Il y a ${diffMins} min`
-
-  const diffHours = Math.floor(diffMins / 60)
-  if (diffHours < 24) return `Il y a ${diffHours}h`
-
-  const diffDays = Math.floor(diffHours / 24)
-  if (diffDays < 7) return `Il y a ${diffDays}j`
-
-  return date.toLocaleDateString()
 }

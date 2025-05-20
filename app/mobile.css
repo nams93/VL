@@ -1,0 +1,127 @@
+/* Optimisations pour les appareils mobiles */
+
+/* Augmenter la taille des zones tactiles */
+@media (max-width: 640px) {
+  button,
+  a,
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px !important; /* Évite le zoom automatique sur iOS */
+  }
+
+  /* Espacement pour une meilleure lisibilité */
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
+
+  /* Améliorer la lisibilité du texte */
+  body {
+    -webkit-text-size-adjust: 100%;
+    line-height: 1.5;
+  }
+
+  /* Optimiser les tableaux pour mobile */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* Améliorer le contraste pour une meilleure lisibilité en extérieur */
+  .high-contrast-mobile {
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Réduire les animations pour économiser la batterie */
+  * {
+    animation-duration: 0.1s !important;
+    transition-duration: 0.1s !important;
+  }
+
+  /* Améliorer la lisibilité sur fond d'image */
+  .text-on-image {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  }
+
+  /* Optimiser les cartes pour mobile */
+  .card-mobile-optimized {
+    margin-bottom: 12px;
+  }
+
+  /* Améliorer la navigation tactile */
+  .mobile-nav-item {
+    padding: 12px 8px;
+  }
+
+  /* Optimiser les formulaires pour mobile */
+  .mobile-form-field {
+    margin-bottom: 16px;
+  }
+
+  /* Améliorer la visibilité des boutons */
+  .mobile-button {
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+}
+
+/* Optimisations pour le mode économie d'énergie */
+@media (prefers-reduced-motion) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Optimisations pour les écrans de très petite taille */
+@media (max-width: 360px) {
+  .xs-hidden {
+    display: none;
+  }
+
+  .xs-text-sm {
+    font-size: 0.75rem;
+  }
+
+  .xs-p-1 {
+    padding: 0.25rem;
+  }
+}
+
+/* Optimisations pour les appareils à écran tactile */
+@media (hover: none) {
+  .touch-feedback:active {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* Optimisations pour l'orientation portrait */
+@media (orientation: portrait) {
+  .portrait-optimized {
+    flex-direction: column;
+  }
+}
+
+/* Optimisations pour l'orientation paysage */
+@media (orientation: landscape) and (max-width: 768px) {
+  .landscape-optimized {
+    flex-direction: row;
+  }
+
+  .landscape-hidden {
+    display: none;
+  }
+}

@@ -1,260 +1,102 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { RefreshCw, Check, AlertTriangle } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
-import { Wifi, WifiOff, Upload, AlertTriangle, CheckCircle, RefreshCw } from "lucide-react"
-import { isOnline, syncAllPendingData, retryFailedSync, setupConnectivityListeners } from "@/lib/sync-service"
-import { countPendingItems } from "@/lib/indexed-db-service"
+import { useTheme } from "@/components/theme-provider"
 
 export function SyncStatus() {
-  const [online, setOnline] = useState(isOnline())
-  const [pendingItems, setPendingItems] = useState({ inspections: 0, photos: 0, radioEquipment: 0 })
-  const [totalPending, setTotalPending] = useState(0)
-  const [syncInProgress, setSyncInProgress] = useState(false)
-  const [syncProgress, setSyncProgress] = useState(0)
-  const [lastSyncResult, setLastSyncResult] = useState<any>(null)
-  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
+  const [syncState, setSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle")
+  const [progress, setProgress] = useState(0)
+  const [message, setMessage] = useState("")
+  const { theme } = useTheme()
 
-  // Mettre à jour le compteur d'éléments en attente
-  const updatePendingCount = async () => {
-    const counts = await countPendingItems()
-    setPendingItems(counts)
-    setTotalPending(counts.inspections + counts.photos + counts.radioEquipment)
-  }
-
-  // Gérer le changement d'état de la connexion
-  const handleOnline = () => {
-    setOnline(true)
-    // Optionnel: synchroniser automatiquement lorsque la connexion est rétablie
-    if (!syncInProgress) {
-      handleSync()
-    }
-  }
-
-  const handleOffline = () => {
-    setOnline(false)
-  }
-
-  // Effectuer la synchronisation
-  const handleSync = async () => {
-    if (!online || syncInProgress) return
-
-    setSyncInProgress(true)
-    setSyncProgress(0)
-
-    try {
-      // Simuler une progression
-      const progressInterval = setInterval(() => {
-        setSyncProgress((prev) => {
-          if (prev >= 95) {
-            clearInterval(progressInterval)
-            return 95
-          }
-          return prev + Math.random() * 10
-        })
-      }, 300)
-
-      // Effectuer la synchronisation
-      const result = await syncAllPendingData()
-
-      clearInterval(progressInterval)
-      setSyncProgress(100)
-
-      // Mettre à jour les résultats
-      setLastSyncResult(result)
-      setLastSyncTime(new Date())
-
-      // Mettre à jour le compteur après la synchronisation
-      await updatePendingCount()
-
-      // Réinitialiser la progression après un court délai
-      setTimeout(() => {
-        setSyncProgress(0)
-        setSyncInProgress(false)
-      }, 1000)
-    } catch (error) {
-      console.error("Erreur lors de la synchronisation:", error)
-      setSyncInProgress(false)
-      setSyncProgress(0)
-    }
-  }
-
-  // Réessayer la synchronisation des éléments en erreur
-  const handleRetry = async () => {
-    if (!online || syncInProgress) return
-
-    setSyncInProgress(true)
-    setSyncProgress(0)
-
-    try {
-      // Simuler une progression
-      const progressInterval = setInterval(() => {
-        setSyncProgress((prev) => {
-          if (prev >= 95) {
-            clearInterval(progressInterval)
-            return 95
-          }
-          return prev + Math.random() * 10
-        })
-      }, 300)
-
-      // Effectuer la nouvelle tentative
-      const result = await retryFailedSync()
-
-      clearInterval(progressInterval)
-      setSyncProgress(100)
-
-      // Mettre à jour les résultats
-      setLastSyncResult(result)
-      setLastSyncTime(new Date())
-
-      // Mettre à jour le compteur après la synchronisation
-      await updatePendingCount()
-
-      // Réinitialiser la progression après un court délai
-      setTimeout(() => {
-        setSyncProgress(0)
-        setSyncInProgress(false)
-      }, 1000)
-    } catch (error) {
-      console.error("Erreur lors de la nouvelle tentative:", error)
-      setSyncInProgress(false)
-      setSyncProgress(0)
-    }
-  }
-
-  // Configurer les écouteurs d'événements et charger les données initiales
   useEffect(() => {
-    // Mettre à jour le compteur initial
-    updatePendingCount()
+    // Simuler une synchronisation périodique
+    const interval = setInterval(() => {
+      const shouldSync = Math.random() > 0.7 // 30% de chance de synchroniser
 
-    // Configurer les écouteurs d'événements pour la connectivité
-    const cleanup = setupConnectivityListeners(handleOnline, handleOffline)
+      if (shouldSync) {
+        startSync()
+      }
+    }, 30000) // Vérifier toutes les 30 secondes
 
-    // Configurer un intervalle pour mettre à jour régulièrement le compteur
-    const countInterval = setInterval(updatePendingCount, 30000) // Toutes les 30 secondes
-
-    // Nettoyer les écouteurs et l'intervalle
-    return () => {
-      cleanup()
-      clearInterval(countInterval)
-    }
+    return () => clearInterval(interval)
   }, [])
 
-  // Si aucun élément en attente et pas de résultat récent, ne pas afficher le composant
-  if (totalPending === 0 && !lastSyncResult && !syncInProgress) {
-    return null
+  const startSync = () => {
+    setSyncState("syncing")
+    setProgress(0)
+    setMessage("Synchronisation en cours...")
+
+    // Simuler une progression
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        const newProgress = prev + Math.random() * 20
+
+        if (newProgress >= 100) {
+          clearInterval(progressInterval)
+
+          // Simuler une réussite ou un échec
+          const isSuccess = Math.random() > 0.1 // 90% de chance de réussite
+
+          if (isSuccess) {
+            setSyncState("success")
+            setMessage("Synchronisation réussie")
+            setTimeout(() => setSyncState("idle"), 3000)
+          } else {
+            setSyncState("error")
+            setMessage("Échec de la synchronisation")
+            setTimeout(() => setSyncState("idle"), 5000)
+          }
+
+          return 100
+        }
+
+        return newProgress
+      })
+    }, 300)
   }
 
+  if (syncState === "idle") return null
+
   return (
-    <Card className={online ? "border-blue-200" : "border-orange-200"}>
-      <CardHeader className={online ? "bg-blue-50" : "bg-orange-50"}>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center">
-            {online ? (
-              <Wifi className="h-5 w-5 mr-2 text-blue-600" />
-            ) : (
-              <WifiOff className="h-5 w-5 mr-2 text-orange-600" />
-            )}
-            {online ? "Synchronisation des données" : "Mode hors ligne"}
-          </CardTitle>
-          {totalPending > 0 && (
-            <div className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-              {totalPending} en attente
-            </div>
+    <div className="fixed bottom-20 left-0 right-0 z-40 px-4">
+      <div
+        className={`mx-auto max-w-md p-3 rounded-md shadow-md transition-colors duration-300 ${
+          syncState === "syncing"
+            ? "bg-blue-50 dark:bg-blue-900/30"
+            : syncState === "success"
+              ? "bg-green-50 dark:bg-green-900/30"
+              : "bg-red-50 dark:bg-red-900/30"
+        }`}
+      >
+        <div className="flex items-center mb-2">
+          {syncState === "syncing" && (
+            <RefreshCw className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-2 animate-spin" />
           )}
-        </div>
-        <CardDescription>
-          {online
-            ? "Synchronisez vos données avec le serveur pour assurer leur sauvegarde."
-            : "Les données seront synchronisées automatiquement lorsque vous serez connecté."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-4">
-        {/* Afficher la progression de la synchronisation */}
-        {syncInProgress && (
-          <div className="space-y-2">
-            <div className="flex justify-between items-center text-sm">
-              <span>Synchronisation en cours...</span>
-              <span>{Math.round(syncProgress)}%</span>
-            </div>
-            <Progress value={syncProgress} className="h-2" />
-          </div>
-        )}
-
-        {/* Afficher le résumé des éléments en attente */}
-        {totalPending > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">Éléments en attente de synchronisation</h4>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-gray-50 p-2 rounded-md">
-                <div className="text-xs text-gray-500">Inspections</div>
-                <div className="text-lg font-bold">{pendingItems.inspections}</div>
-              </div>
-              <div className="bg-gray-50 p-2 rounded-md">
-                <div className="text-xs text-gray-500">Photos</div>
-                <div className="text-lg font-bold">{pendingItems.photos}</div>
-              </div>
-              <div className="bg-gray-50 p-2 rounded-md">
-                <div className="text-xs text-gray-500">Équipements</div>
-                <div className="text-lg font-bold">{pendingItems.radioEquipment}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Afficher le résultat de la dernière synchronisation */}
-        {lastSyncResult && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">Dernière synchronisation</h4>
-            <div className="bg-gray-50 p-3 rounded-md">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  {lastSyncResult.success ? (
-                    <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                  ) : (
-                    <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
-                  )}
-                  <span className="text-sm">
-                    {lastSyncResult.success ? "Synchronisation réussie" : "Synchronisation partielle"}
-                  </span>
-                </div>
-                {lastSyncTime && <span className="text-xs text-gray-500">{lastSyncTime.toLocaleTimeString()}</span>}
-              </div>
-              <div className="mt-2 text-xs text-gray-600">
-                {lastSyncResult.successCount} élément(s) synchronisé(s), {lastSyncResult.errorCount} erreur(s)
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Boutons d'action */}
-        <div className="flex gap-2 pt-2">
-          {lastSyncResult && lastSyncResult.errorCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRetry}
-              disabled={!online || syncInProgress}
-              className="flex-1"
-            >
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Réessayer ({lastSyncResult.errorCount})
-            </Button>
-          )}
-          <Button
-            onClick={handleSync}
-            disabled={!online || syncInProgress || totalPending === 0}
-            size="sm"
-            className="flex-1"
+          {syncState === "success" && <Check className="h-4 w-4 text-green-600 dark:text-green-400 mr-2" />}
+          {syncState === "error" && <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 mr-2" />}
+          <span
+            className={`text-sm font-medium ${
+              syncState === "syncing"
+                ? "text-blue-700 dark:text-blue-300"
+                : syncState === "success"
+                  ? "text-green-700 dark:text-green-300"
+                  : "text-red-700 dark:text-red-300"
+            }`}
           >
-            <Upload className="h-4 w-4 mr-1" />
-            {syncInProgress ? "Synchronisation..." : "Synchroniser maintenant"}
-          </Button>
+            {message}
+          </span>
         </div>
-      </CardContent>
-    </Card>
+        {syncState === "syncing" && (
+          <Progress
+            value={progress}
+            className="h-1.5 bg-blue-100 dark:bg-blue-800"
+            indicatorClassName="bg-blue-600 dark:bg-blue-400"
+          />
+        )}
+      </div>
+    </div>
   )
 }

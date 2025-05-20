@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vérification des images</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .image-container {
+            margin-bottom: 30px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 10px;
+        }
+        h2 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Vérification des images du véhicule</h1>
+    <p>Cette page permet de vérifier si les images sont correctement chargées sur le serveur.</p>
+    
+    <div class="image-container">
+        <h2>Vue avant du véhicule</h2>
+        <img src="/images/vehicle-front.jpeg" alt="Vue avant du véhicule">
+        <p>Chemin: /images/vehicle-front.jpeg</p>
+    </div>
+    
+    <div class="image-container">
+        <h2>Vue arrière du véhicule</h2>
+        <img src="/images/vehicle-rear.jpeg" alt="Vue arrière du véhicule">
+        <p>Chemin: /images/vehicle-rear.jpeg</p>
+    </div>
+    
+    <div class="image-container">
+        <h2>Vue intérieure du véhicule</h2>
+        <img src="/images/vehicle-interior.jpeg" alt="Vue intérieure du véhicule">
+        <p>Chemin: /images/vehicle-interior.jpeg</p>
+    </div>
+</body>
+</html>

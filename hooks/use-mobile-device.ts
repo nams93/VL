@@ -2,29 +2,24 @@
 
 import { useState, useEffect } from "react"
 
-export function useMobileDevice() {
+export function useMobileDevice(): boolean {
   const [isMobile, setIsMobile] = useState(false)
-  const [isTablet, setIsTablet] = useState(false)
-  const [orientation, setOrientation] = useState<"portrait" | "landscape">("portrait")
 
   useEffect(() => {
-    // Fonction pour vérifier la taille de l'écran
-    const checkDevice = () => {
-      const width = window.innerWidth
-      setIsMobile(width < 768)
-      setIsTablet(width >= 768 && width < 1024)
-      setOrientation(window.innerHeight > window.innerWidth ? "portrait" : "landscape")
+    // Fonction pour vérifier si l'appareil est mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
     }
 
     // Vérifier au chargement
-    checkDevice()
+    checkMobile()
 
     // Ajouter un écouteur d'événement pour le redimensionnement
-    window.addEventListener("resize", checkDevice)
+    window.addEventListener("resize", checkMobile)
 
     // Nettoyer l'écouteur d'événement
-    return () => window.removeEventListener("resize", checkDevice)
+    return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  return { isMobile, isTablet, orientation }
+  return isMobile
 }

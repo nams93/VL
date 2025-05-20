@@ -12,7 +12,7 @@ export function CompactNotifications() {
 
   useEffect(() => {
     const loadNotifications = () => {
-      const currentUser = authService.getCurrentUser()
+      const currentUser = authService.getCurrentAgent()
       if (currentUser) {
         const agentNotifications = notificationService.getNotificationsForAgent(currentUser.id)
         setNotifications(agentNotifications.slice(0, 3)) // Limiter à 3 notifications

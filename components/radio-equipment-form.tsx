@@ -488,13 +488,13 @@ export function RadioEquipmentForm({ formId, isEditing = false }: RadioEquipment
                             value={deporte.id || "none"}
                             onValueChange={(value) => updateDeporte(index, "id", value === "none" ? "" : value)}
                           >
-                            <SelectTrigger className="h-9 text-sm">
+                            <SelectTrigger className="h-12 sm:h-9 text-base sm:text-sm">
                               <SelectValue placeholder={`Sélectionner un déporté`} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="none">Sélectionner...</SelectItem>
                               {DEPORTE_OPTIONS.map((option) => (
-                                <SelectItem key={option} value={option}>
+                                <SelectItem key={option} value={option} className="py-3 sm:py-2">
                                   {option}
                                 </SelectItem>
                               ))}

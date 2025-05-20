@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hors ligne - GPIS Gestion des Véhicules</title>
+  <title>GPIS - Hors ligne</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -12,60 +12,101 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      background-color: #f8fafc;
+      background-color: #f5f7fa;
+      color: #333;
     }
     
     .container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      max-width: 600px;
+      margin: 0 auto;
       padding: 2rem;
       text-align: center;
     }
     
     .logo {
-      width: 100px;
-      height: auto;
+      width: 120px;
       margin-bottom: 2rem;
-      border-radius: 8px;
     }
     
     h1 {
-      font-size: 1.5rem;
+      font-size: 1.8rem;
       margin-bottom: 1rem;
-      color: #1e293b;
+      color: #0046ad;
     }
     
     p {
-      font-size: 1rem;
-      margin-bottom: 2rem;
-      color: #64748b;
-      max-width: 500px;
-    }
-    
-    .button {
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.375rem;
-      font-weight: 500;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-    }
-    
-    .button:hover {
-      background-color: #1d4ed8;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
     }
     
     .offline-icon {
-      width: 64px;
-      height: 64px;
+      font-size: 4rem;
       margin-bottom: 1rem;
-      color: #64748b;
+      color: #0046ad;
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2rem;
+    }
+    
+    .button {
+      display: inline-block;
+      background-color: #0046ad;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 500;
+      margin-top: 1rem;
+    }
+    
+    .button:hover {
+      background-color: #003c94;
+    }
+    
+    .footer {
+      margin-top: auto;
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #666;
+      background-color: #e9ecef;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #1a202c;
+        color: #e2e8f0;
+      }
+      
+      .card {
+        background-color: #2d3748;
+      }
+      
+      h1 {
+        color: #63b3ed;
+      }
+      
+      .offline-icon {
+        color: #63b3ed;
+      }
+      
+      .button {
+        background-color: #3182ce;
+      }
+      
+      .button:hover {
+        background-color: #2b6cb0;
+      }
+      
+      .footer {
+        background-color: #2d3748;
+        color: #a0aec0;
+      }
     }
   </style>
 </head>
@@ -73,21 +114,33 @@
   <div class="container">
     <img src="/images/gpis_gie_logo.jpeg" alt="GPIS Logo" class="logo">
     
-    <svg class="offline-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="1" y1="1" x2="23" y2="23"></line>
-      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
-      <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
-      <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
-      <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
-      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-      <line x1="12" y1="20" x2="12.01" y2="20"></line>
-    </svg>
+    <div class="card">
+      <div class="offline-icon">📶</div>
+      <h1>Vous êtes hors ligne</h1>
+      <p>
+        Impossible de se connecter à Internet. Vérifiez votre connexion réseau et réessayez.
+      </p>
+      <p>
+        L'application GPIS fonctionne en mode hors ligne avec des fonctionnalités limitées.
+        Vos données sont enregistrées localement et seront synchronisées automatiquement
+        lorsque vous serez à nouveau en ligne.
+      </p>
+      <a href="/" class="button">Réessayer</a>
+    </div>
     
-    <h1>Vous êtes hors ligne</h1>
-    <p>Impossible de se connecter à Internet. Vérifiez votre connexion et réessayez.</p>
-    <p>Certaines fonctionnalités restent disponibles en mode hors ligne.</p>
-    
-    <button class="button" onclick="window.location.reload()">Réessayer</button>
+    <div class="card">
+      <h2>Fonctionnalités disponibles hors ligne</h2>
+      <ul style="text-align: left; display: inline-block;">
+        <li>Consultation des inspections récentes</li>
+        <li>Création de nouvelles inspections</li>
+        <li>Prise de photos (stockées localement)</li>
+        <li>Consultation des véhicules</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="footer">
+    &copy; 2025 GPIS GIE - Tous droits réservés
   </div>
 </body>
 </html>

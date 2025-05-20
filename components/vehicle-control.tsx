@@ -9,7 +9,9 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/hooks/use-toast"
 import {
+  Info,
   Lock,
   Unlock,
   Power,
@@ -24,133 +26,12 @@ import {
   Truck,
   Car,
 } from "lucide-react"
+import { VehicleFunctionBadge } from "./vehicle-function-badge"
+import { VehicleFunctionLegend } from "./vehicle-function-legend"
+import { vehiclesData, type VehicleDetails } from "@/lib/vehicle-data"
 
 type VehicleControlProps = {
   selectedVehicleId: string | null
-}
-
-type VehicleDetails = {
-  id: string
-  immatriculation: string
-  type: "Camion" | "Voiture" | "Camionnette"
-  chauffeur: string
-  statut: "actif" | "inactif" | "maintenance"
-  carburant: number
-  kilometrage: number
-  temperature: number
-  batterie: number
-  position: {
-    latitude: number
-    longitude: number
-    adresse: string
-  }
-  verrouille: boolean
-  moteurAllume: boolean
-  climatisation: boolean
-  vitesse: number
-}
-
-const vehiclesData: Record<string, VehicleDetails> = {
-  v1: {
-    id: "v1",
-    immatriculation: "AB-123-CD",
-    type: "Camion",
-    chauffeur: "Jean Dupont",
-    statut: "actif",
-    carburant: 75,
-    kilometrage: 12500,
-    temperature: 22,
-    batterie: 95,
-    position: {
-      latitude: 48.8566,
-      longitude: 2.3522,
-      adresse: "Avenue des Champs-Élysées, Paris",
-    },
-    verrouille: false,
-    moteurAllume: true,
-    climatisation: true,
-    vitesse: 65,
-  },
-  v2: {
-    id: "v2",
-    immatriculation: "EF-456-GH",
-    type: "Voiture",
-    chauffeur: "Marie Martin",
-    statut: "actif",
-    carburant: 45,
-    kilometrage: 8700,
-    temperature: 20,
-    batterie: 80,
-    position: {
-      latitude: 45.764,
-      longitude: 4.8357,
-      adresse: "Rue de la République, Lyon",
-    },
-    verrouille: false,
-    moteurAllume: true,
-    climatisation: false,
-    vitesse: 30,
-  },
-  v3: {
-    id: "v3",
-    immatriculation: "IJ-789-KL",
-    type: "Camionnette",
-    chauffeur: "Pierre Durand",
-    statut: "maintenance",
-    carburant: 90,
-    kilometrage: 5200,
-    temperature: 18,
-    batterie: 100,
-    position: {
-      latitude: 43.2965,
-      longitude: 5.3698,
-      adresse: "Vieux Port, Marseille",
-    },
-    verrouille: true,
-    moteurAllume: false,
-    climatisation: false,
-    vitesse: 0,
-  },
-  v4: {
-    id: "v4",
-    immatriculation: "MN-012-OP",
-    type: "Camion",
-    chauffeur: "Sophie Petit",
-    statut: "inactif",
-    carburant: 30,
-    kilometrage: 18900,
-    temperature: 15,
-    batterie: 60,
-    position: {
-      latitude: 47.2184,
-      longitude: -1.5536,
-      adresse: "Place du Commerce, Nantes",
-    },
-    verrouille: true,
-    moteurAllume: false,
-    climatisation: false,
-    vitesse: 0,
-  },
-  v5: {
-    id: "v5",
-    immatriculation: "QR-345-ST",
-    type: "Voiture",
-    chauffeur: "Lucas Bernard",
-    statut: "actif",
-    carburant: 60,
-    kilometrage: 3500,
-    temperature: 24,
-    batterie: 85,
-    position: {
-      latitude: 43.6045,
-      longitude: 1.4442,
-      adresse: "Place du Capitole, Toulouse",
-    },
-    verrouille: false,
-    moteurAllume: true,
-    climatisation: true,
-    vitesse: 45,
-  },
 }
 
 export function VehicleControl({ selectedVehicleId }: VehicleControlProps) {
@@ -160,6 +41,8 @@ export function VehicleControl({ selectedVehicleId }: VehicleControlProps) {
   const [isEngineOn, setIsEngineOn] = useState<boolean>(false)
   const [isAcOn, setIsAcOn] = useState<boolean>(false)
   const [selectedVehicleOption, setSelectedVehicleOption] = useState<string>("")
+  const [showLegend, setShowLegend] = useState<boolean>(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     if (selectedVehicleId && vehiclesData[selectedVehicleId]) {
@@ -185,6 +68,22 @@ export function VehicleControl({ selectedVehicleId }: VehicleControlProps) {
       setIsLocked(vehicle.verrouille)
       setIsEngineOn(vehicle.moteurAllume)
       setIsAcOn(vehicle.climatisation)
+
+      // Notification pour la fonction du véhicule
+      toast({
+        title: `Véhicule ${vehicle.immatriculation} sélectionné`,
+        description: `Fonction: ${vehicle.fonction} - Kilométrage: ${vehicle.kilometrage} km`,
+        variant:
+          vehicle.fonction === "PATROUILLE"
+            ? "default"
+            : vehicle.fonction === "K9"
+              ? "success"
+              : vehicle.fonction === "ASTREINTE"
+                ? "warning"
+                : vehicle.fonction === "DG"
+                  ? "destructive"
+                  : "secondary",
+      })
     } else {
       setSelectedVehicle(null)
     }
@@ -202,42 +101,60 @@ export function VehicleControl({ selectedVehicleId }: VehicleControlProps) {
     setIsAcOn(!isAcOn)
   }
 
+  const toggleLegend = () => {
+    setShowLegend(!showLegend)
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center space-x-4">
-        <Select value={selectedVehicleOption} onValueChange={handleVehicleChange}>
-          <SelectTrigger className="w-[280px]">
-            <SelectValue placeholder="Sélectionner un véhicule" />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.values(vehiclesData).map((vehicle) => (
-              <SelectItem key={vehicle.id} value={vehicle.id}>
-                {vehicle.immatriculation} - {vehicle.type}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {selectedVehicle && (
-          <Badge
-            variant={
-              selectedVehicle.statut === "actif"
-                ? "default"
-                : selectedVehicle.statut === "maintenance"
-                  ? "secondary"
-                  : "outline"
-            }
-          >
-            {selectedVehicle.statut === "actif" ? (
-              <CheckCircle2 className="mr-1 h-3 w-3" />
-            ) : selectedVehicle.statut === "maintenance" ? (
-              <AlertTriangle className="mr-1 h-3 w-3" />
-            ) : (
-              <Power className="mr-1 h-3 w-3" />
-            )}
-            {selectedVehicle.statut.charAt(0).toUpperCase() + selectedVehicle.statut.slice(1)}
-          </Badge>
-        )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Select value={selectedVehicleOption} onValueChange={handleVehicleChange}>
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder="Sélectionner un véhicule" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.values(vehiclesData).map((vehicle) => (
+                <SelectItem key={vehicle.id} value={vehicle.id}>
+                  <div className="flex items-center justify-between w-full">
+                    <span>{vehicle.immatriculation}</span>
+                    <VehicleFunctionBadge fonction={vehicle.fonction} size="sm" className="ml-2" />
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedVehicle && (
+            <div className="flex items-center space-x-2">
+              <Badge
+                variant={
+                  selectedVehicle.statut === "actif"
+                    ? "default"
+                    : selectedVehicle.statut === "maintenance"
+                      ? "secondary"
+                      : "outline"
+                }
+              >
+                {selectedVehicle.statut === "actif" ? (
+                  <CheckCircle2 className="mr-1 h-3 w-3" />
+                ) : selectedVehicle.statut === "maintenance" ? (
+                  <AlertTriangle className="mr-1 h-3 w-3" />
+                ) : (
+                  <Power className="mr-1 h-3 w-3" />
+                )}
+                {selectedVehicle.statut.charAt(0).toUpperCase() + selectedVehicle.statut.slice(1)}
+              </Badge>
+              <VehicleFunctionBadge fonction={selectedVehicle.fonction} />
+            </div>
+          )}
+        </div>
+        <Button variant="outline" size="sm" onClick={toggleLegend}>
+          <Info className="h-4 w-4 mr-1" />
+          Légende
+        </Button>
       </div>
+
+      {showLegend && <VehicleFunctionLegend />}
 
       {selectedVehicle ? (
         <Tabs defaultValue="controle" className="space-y-4">
@@ -351,9 +268,19 @@ export function VehicleControl({ selectedVehicleId }: VehicleControlProps) {
                     <span className="text-sm font-medium">Type:</span>
                     <span className="text-sm">{selectedVehicle.type}</span>
                   </div>
+                  {selectedVehicle.marque && (
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Marque:</span>
+                      <span className="text-sm">{selectedVehicle.marque}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-sm font-medium">Chauffeur:</span>
                     <span className="text-sm">{selectedVehicle.chauffeur}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">Fonction:</span>
+                    <VehicleFunctionBadge fonction={selectedVehicle.fonction} />
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm font-medium">Kilométrage:</span>
@@ -380,7 +307,7 @@ export function VehicleControl({ selectedVehicleId }: VehicleControlProps) {
                       </div>
                       <span className="text-sm">{selectedVehicle.carburant}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${selectedVehicle.carburant > 60 ? "bg-green-500" : selectedVehicle.carburant > 30 ? "bg-amber-500" : "bg-red-500"}`}
                         style={{ width: `${selectedVehicle.carburant}%` }}
@@ -396,7 +323,7 @@ export function VehicleControl({ selectedVehicleId }: VehicleControlProps) {
                       </div>
                       <span className="text-sm">{selectedVehicle.batterie}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
                         className="h-2 rounded-full bg-green-500"
                         style={{ width: `${selectedVehicle.batterie}%` }}
@@ -443,9 +370,9 @@ export function VehicleControl({ selectedVehicleId }: VehicleControlProps) {
                   <div className="text-sm text-muted-foreground">
                     Latitude: {selectedVehicle.position.latitude}, Longitude: {selectedVehicle.position.longitude}
                   </div>
-                  <div className="w-full h-[300px] bg-gray-100 rounded-md relative">
+                  <div className="w-full h-[300px] bg-gray-100 dark:bg-gray-800 rounded-md relative">
                     <img
-                      src="/placeholder.svg?height=300&width=600"
+                      src="/placeholder-ahsu1.png"
                       alt="Carte de localisation"
                       className="w-full h-full object-cover rounded-md"
                     />

@@ -36,6 +36,11 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto py-3 px-3 max-w-7xl">
+      <div className="mb-6">
+        <h1 className="text-4xl font-bold text-center bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent drop-shadow-md">
+          Système de Gestion des Véhicules
+        </h1>
+      </div>
       <DashboardHeader
         title="Tableau de Bord"
         subtitle="Gestion et suivi du parc automobile"

@@ -1,29 +1,25 @@
 "use client"
 
-import { VehicleInspectionForm } from "@/components/vehicle-inspection-form"
-import { VehiclePhotoCapture } from "@/components/vehicle-photo-capture"
-import { SyncStatus } from "@/components/sync-status"
-import { OfflineMode } from "@/components/offline-mode"
 import { useState } from "react"
-import { v4 as uuidv4 } from "uuid"
+import { VehicleInspection3D } from "@/components/vehicle-inspection-3d"
+import { useRouter } from "next/navigation"
 
 export default function VehicleInspectionPage() {
-  const [inspectionId] = useState(`inspection-${uuidv4()}`)
-  const [vehicleId, setVehicleId] = useState("")
+  const router = useRouter()
+  const [inspectionCompleted, setInspectionCompleted] = useState(false)
+
+  // Fonction pour gérer la complétion de l'inspection
+  const handleInspectionComplete = (inspectionData: any, licensePlate: string) => {
+    console.log("Inspection complétée:", inspectionData, "Plaque:", licensePlate)
+    setInspectionCompleted(true)
+  }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <h1 className="text-2xl font-bold">Inspection de Véhicule</h1>
+    <div className="container mx-auto px-4 py-6 pb-24">
+      <h1 className="text-2xl font-bold mb-4">Inspection du Véhicule</h1>
 
-      {/* Afficher le mode hors ligne si nécessaire */}
-      <OfflineMode />
-
-      {/* Afficher l'état de synchronisation */}
-      <SyncStatus />
-
-      <VehicleInspectionForm onVehicleIdChange={(id) => setVehicleId(id)} />
-
-      {vehicleId && <VehiclePhotoCapture inspectionId={inspectionId} vehicleId={vehicleId} />}
+      {/* Composant d'inspection */}
+      <VehicleInspection3D onComplete={handleInspectionComplete} />
     </div>
   )
 }
